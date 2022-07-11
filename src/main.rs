@@ -43,22 +43,28 @@ fn get_cost(solution: &Vec<usize>, matrix: &Vec<Vec<f64>>, sz: usize) -> f64 {
 }
 
 fn f0(t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
-    t0-i as f64*((t0-tn)/n as f64)
+    t0 - i as f64 * ((t0 - tn) / n as f64)
 }
 
 fn f1(t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
-    (t0-tn)/(1.0+f64::powf(std::f64::consts::E,0.3*(i as f64-(n as f64)/2.0)))+tn
+    (t0 - tn) / (1.0 + f64::powf(std::f64::consts::E, 0.3 * (i as f64 - (n as f64) / 2.0))) + tn
 }
 
-fn f2 (t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
-    let a = f64::ln(t0-tn)/f64::ln(n as f64);
-    t0-f64::powf(i as f64, a)
+fn f2(t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
+    let a = f64::ln(t0 - tn) / f64::ln(n as f64);
+    t0 - f64::powf(i as f64, a)
 }
 
-fn f3 (t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
+fn f3(t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    ((t0-tn)/2.0)*(1.0-f64::tanh(10.0*i/n - 5.0))+tn
+    ((t0 - tn) / 2.0) * (1.0 - f64::tanh(10.0 * i / n - 5.0)) + tn
+}
+
+fn f5(t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
+    let i = i as f64;
+    let n = n as f64;
+    ((t0-tn)/2.0)*(1.0+f64::cos((i*std::f64::consts::PI)/n))+tn
 }
 
 fn sa(
@@ -82,11 +88,15 @@ fn sa(
     let mut iter = 0;
     let mut log_temperature_file = fs::File::create("outputs/log_temperature").unwrap();
     let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
+    let mut log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
     while iter < max_iter {
         writeln!(log_temperature_file, "{} {}", iter, t).unwrap();
         while iter_t < samax {
             iter_t += 1;
             sn.copy_from_slice(s);
+            // writeln!(log_arrays_file, "\n\nIter: {}, {}", iter, iter_t).unwrap();
+            // writeln!(log_arrays_file, "s: {:?}", s).unwrap();
+            // writeln!(log_arrays_file, "sn after copy: {:?}", sn).unwrap();
             let between = Uniform::from(1..=5);
             let mut rng = rand::thread_rng();
             let num_changes = between.sample(&mut rng);
@@ -103,7 +113,10 @@ fn sa(
                 sn.swap(x, y);
                 cont += 1;
             }
-            let delta = get_cost(&sr, matrix, sz) - get_cost(s, matrix, sz);
+            // writeln!(log_arrays_file, "s after changes: {:?}", s).unwrap();
+            // writeln!(log_arrays_file, "sn after changes: {:?}", sn).unwrap();
+            let delta = get_cost(s, matrix, sz) - get_cost(&sr, matrix, sz);
+            // writeln!(log_arrays_file, "{}", delta).unwrap();
             if delta < 0.0 {
                 s.copy_from_slice(&sn);
                 if get_cost(&sn, matrix, sz) < get_cost(&sr, matrix, sz) {
@@ -140,10 +153,31 @@ fn main() {
     solution.shuffle(&mut rng);
     let cost = get_cost(&solution, &matrix, sz);
     println!("Initial Solution: {}", cost);
-    // solution = sa(0.9, 5, 1000, 1000.0, 0.0001, &mut solution, &matrix, sz, f0);
-    // solution = sa(0.9, 5, 100, 100000.0, 0.0001, &mut solution, &matrix, sz, f1);
-    // solution = sa(0.9, 5, 1000, 100000.0, 5.0001, &mut solution, &matrix, sz, f2);
-    solution = sa(0.9, 1, 100000, 1500.0, 2.0001, &mut solution, &matrix, sz, f3);
+    // solution = sa(0.9, 5, 10000, 1000.0, 0.0001, &mut solution, &matrix, sz, f0);
+    // solution = sa(0.9, 5, 10000, 100000.0, 0.0001, &mut solution, &matrix, sz, f1);
+    
+    // solution = sa(
+    //     0.9,
+    //     5,
+    //     100000,
+    //     1500.0,
+    //     100.0001,
+    //     &mut solution,
+    //     &matrix,
+    //     sz,
+    //     f3,
+    // );
+    solution = sa(
+        0.9,
+        5,
+        100000,
+        1500.0,
+        1000.0001,
+        &mut solution,
+        &matrix,
+        sz,
+        f5,
+    );
     let new_cost = get_cost(&solution, &matrix, sz);
     println!("Some SA Solution: {}", new_cost);
     // println!("Optmization: {}", new_cost/cost);
