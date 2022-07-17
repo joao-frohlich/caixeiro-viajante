@@ -84,7 +84,13 @@ fn cooling_schedule_5 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
 fn cooling_schedule_6 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    ((t0-tn)/2.0)*(1.0-f64::tanh(10.0*i/n - 5.0))+tn
+    ((t0 - tn) / 2.0) * (1.0 - f64::tanh(10.0 * i / n - 5.0)) + tn
+}
+
+fn f5(t0: f64, _ti: f64, i: usize, tn: f64, n: usize, _alpha: f64) -> f64 {
+    let i = i as f64;
+    let n = n as f64;
+    ((t0-tn)/2.0)*(1.0+f64::cos((i*std::f64::consts::PI)/n))+tn
 }
 
 fn cooling_schedule_7 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
@@ -125,11 +131,15 @@ fn sa(
     let mut iter = 0;
     let mut log_temperature_file = fs::File::create("outputs/log_temperature").unwrap();
     let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
+    let mut log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
     while iter < max_iter {
         writeln!(log_temperature_file, "{} {}", iter, t).unwrap();
         while iter_t < samax {
             iter_t += 1;
             sn.copy_from_slice(s);
+            // writeln!(log_arrays_file, "\n\nIter: {}, {}", iter, iter_t).unwrap();
+            // writeln!(log_arrays_file, "s: {:?}", s).unwrap();
+            // writeln!(log_arrays_file, "sn after copy: {:?}", sn).unwrap();
             let between = Uniform::from(1..=5);
             let mut rng = rand::thread_rng();
             let num_changes = between.sample(&mut rng);
