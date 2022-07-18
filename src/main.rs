@@ -2,7 +2,7 @@ use rand::distributions::{Distribution, Uniform};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs;
-use std::io::Write;
+//use std::io::Write;
 
 fn read_points(instance: usize) -> Vec<(i32, i32)> {
     let mut points: Vec<(i32, i32)> = Vec::<(i32, i32)>::new();
@@ -127,7 +127,7 @@ fn sa(
     let mut iter = 0;
     // let mut log_temperature_file = fs::File::create("outputs/log_temperature").unwrap();
     // let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
-    // let mut log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
+    // let mut _log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
     while iter < max_iter {
         // writeln!(log_temperature_file, "{} {}", iter, t).unwrap();
         while iter_t < samax {
@@ -181,7 +181,7 @@ fn sa(
 }
 
 fn main() {
-    let sz = 51;
+    let sz = 100;
     let points = read_points(sz);
     let matrix = get_matrix(&points, sz);
     let mut solution = Vec::<usize>::new();
@@ -193,7 +193,8 @@ fn main() {
     let cost = get_cost(&solution, &matrix, sz);
     println!("Initial Solution: {}", cost);
 
-    let functions = [cooling_schedule_0, cooling_schedule_1, cooling_schedule_2, cooling_schedule_3, cooling_schedule_4, cooling_schedule_5, cooling_schedule_6, cooling_schedule_7, cooling_schedule_8, cooling_schedule_9];
+    // let functions = [cooling_schedule_0, cooling_schedule_1, cooling_schedule_2, cooling_schedule_3, cooling_schedule_4, cooling_schedule_5, cooling_schedule_6, cooling_schedule_7, cooling_schedule_8, cooling_schedule_9];
+    let functions = [cooling_schedule_3, cooling_schedule_5, cooling_schedule_7];
 
     let mut cont = 0;
     for function in functions {
@@ -201,8 +202,8 @@ fn main() {
         let mut samax = 5;
         while samax <= 30 {
             println!("\tmetropolis: {}", samax);
-            let mut max_iter = 5000;
-            while max_iter <= 100000 {
+            let mut max_iter = 100000;
+            while max_iter <= 500000 {
                 println!("\t\tmax_iter: {}", max_iter);
                 let mut temp = 100.0;
                 while temp < 5005.0 {
@@ -212,7 +213,7 @@ fn main() {
                     println!("\t\t\t\tcost: {}", get_cost(&new_solution, &matrix, sz));
                     temp += 100.0;
                 }
-                max_iter += 5000;
+                max_iter += 100000;
             }
             samax += 5;
         }
@@ -247,6 +248,21 @@ fn main() {
     // partial_solution_6 = sa(5, 40000, 100.0, 0.0, &mut partial_solution_6, &matrix, sz, cooling_schedule_6);
     // let partial_cost_6 = get_cost(&partial_solution_6, &matrix, sz);
     // println!("Solution for cooling schedule 6: {}", partial_cost_6);
+
+    // Para instância de 51 cidades
+    //
+    // let mut partial_solution_7 = solution.clone();
+    // partial_solution_7 = sa(30, 100000, 3400.0, 0.0, &mut partial_solution_7, &matrix, sz, functions[7]);
+    // let partial_cost_7 = get_cost(&partial_solution_7, &matrix, sz);
+    // println!("Some solution: {}", partial_cost_7);
+
+    // Para instância de 100 cidades
+    //
+    // let mut partial_solution_7 = solution.clone();
+    // partial_solution_7 = sa(30, 500000, 500.0, 0.0, &mut partial_solution_7, &matrix, sz, functions[3]);
+    // let partial_cost_7 = get_cost(&partial_solution_7, &matrix, sz);
+    // println!("Some solution: {}", partial_cost_7);
+
     // solution = sa(5, 10000, 100.0, 0.0001, &mut solution, &matrix, sz, cooling_schedule_3);
     // solution = sa(5, 10000, 300.0, 0.0001, &mut solution, &matrix, sz, cooling_schedule_6);
     // let new_cost = get_cost(&solution, &matrix, sz);
