@@ -125,11 +125,11 @@ fn sa(
     let mut iter_t = 0;
     let mut t = t0;
     let mut iter = 0;
-    let mut log_temperature_file = fs::File::create("outputs/log_temperature").unwrap();
-    let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
-    let mut log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
+    // let mut log_temperature_file = fs::File::create("outputs/log_temperature").unwrap();
+    // let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
+    // let mut log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
     while iter < max_iter {
-        writeln!(log_temperature_file, "{} {}", iter, t).unwrap();
+        // writeln!(log_temperature_file, "{} {}", iter, t).unwrap();
         while iter_t < samax {
             iter_t += 1;
             sn.copy_from_slice(s);
@@ -170,7 +170,7 @@ fn sa(
                 }
             }
         }
-        writeln!(log_solution_file, "{} {}", iter, get_cost(&s, matrix, sz)).unwrap();
+        // writeln!(log_solution_file, "{} {}", iter, get_cost(&s, matrix, sz)).unwrap();
         if t > min_t {
             t = f(t0, iter, min_t, max_iter);
         }
@@ -181,7 +181,7 @@ fn sa(
 }
 
 fn main() {
-    let sz = 100;
+    let sz = 51;
     let points = read_points(sz);
     let matrix = get_matrix(&points, sz);
     let mut solution = Vec::<usize>::new();
@@ -198,26 +198,23 @@ fn main() {
     let mut cont = 0;
     for function in functions {
         println!("Results for cooling schedule {}", cont);
-        for samax in 1..=10 {
+        let mut samax = 5;
+        while samax <= 30 {
             println!("\tmetropolis: {}", samax);
-            let mut max_iter = 10000;
+            let mut max_iter = 5000;
             while max_iter <= 100000 {
                 println!("\t\tmax_iter: {}", max_iter);
                 let mut temp = 100.0;
-                println!("\t\t\tinitial temperature: {}", temp);
-                let mut new_solution = solution.clone();
-                new_solution = sa(samax, max_iter, temp, 0.0, &mut new_solution, &matrix, sz, function);
-                println!("\t\t\t\tcost: {}", get_cost(&new_solution, &matrix, sz));
-                temp = 500.0;
                 while temp < 5005.0 {
                     println!("\t\t\tinitial temperature: {}", temp);
-                    new_solution = solution.clone();
+                    let mut new_solution = solution.clone();
                     new_solution = sa(samax, max_iter, temp, 0.0, &mut new_solution, &matrix, sz, function);
                     println!("\t\t\t\tcost: {}", get_cost(&new_solution, &matrix, sz));
-                    temp += 500.0;
+                    temp += 100.0;
                 }
-                max_iter += 10000;
+                max_iter += 5000;
             }
+            samax += 5;
         }
         cont += 1;
     }
