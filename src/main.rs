@@ -193,8 +193,8 @@ fn main() {
     let cost = get_cost(&solution, &matrix, sz);
     println!("Initial Solution: {}", cost);
 
-    // let functions = [cooling_schedule_0, cooling_schedule_1, cooling_schedule_2, cooling_schedule_3, cooling_schedule_4, cooling_schedule_5, cooling_schedule_6, cooling_schedule_7, cooling_schedule_8, cooling_schedule_9];
-    let functions = [cooling_schedule_3, cooling_schedule_5, cooling_schedule_7];
+    let functions = [cooling_schedule_0, cooling_schedule_1, cooling_schedule_2, cooling_schedule_3, cooling_schedule_4, cooling_schedule_5, cooling_schedule_6, cooling_schedule_7, cooling_schedule_8, cooling_schedule_9];
+    // let functions = [cooling_schedule_3, cooling_schedule_5, cooling_schedule_7];
 
     let mut cont = 0;
     for function in functions {
