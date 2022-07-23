@@ -1,8 +1,9 @@
 use rand::distributions::{Distribution, Uniform};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use std::env;
 use std::fs;
-//use std::io::Write;
+use std::io::Write;
 
 fn read_points(instance: usize) -> Vec<(i32, i32)> {
     let mut points: Vec<(i32, i32)> = Vec::<(i32, i32)>::new();
@@ -42,69 +43,69 @@ fn get_cost(solution: &Vec<usize>, matrix: &Vec<Vec<f64>>, sz: usize) -> f64 {
     cost
 }
 
-fn cooling_schedule_0 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_0(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    t0-i*((t0-tn)/n)
+    t0 - i * ((t0 - tn) / n)
 }
 
-fn cooling_schedule_1 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_1(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    t0*f64::powf(tn/t0,i/n)
+    t0 * f64::powf(tn / t0, i / n)
 }
 
-fn cooling_schedule_2 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_2(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    let a = ((t0-tn)*(n+1.0))/n;
-    let b = t0-a;
-    (a/(i+1.0))+b
+    let a = ((t0 - tn) * (n + 1.0)) / n;
+    let b = t0 - a;
+    (a / (i + 1.0)) + b
 }
 
-fn cooling_schedule_3 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_3(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    let a = f64::ln(t0-tn)/f64::ln(n);
-    t0-f64::powf(i, a)
+    let a = f64::ln(t0 - tn) / f64::ln(n);
+    t0 - f64::powf(i, a)
 }
 
-fn cooling_schedule_4 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_4(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    ((t0-tn)/(1.0+f64::powf(std::f64::consts::E,0.3*(i-n/2.0))))+tn
+    ((t0 - tn) / (1.0 + f64::powf(std::f64::consts::E, 0.3 * (i - n / 2.0)))) + tn
 }
 
-fn cooling_schedule_5 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_5(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    ((t0-tn)/2.0)*(1.0+f64::cos((i*std::f64::consts::PI)/n))+tn
+    ((t0 - tn) / 2.0) * (1.0 + f64::cos((i * std::f64::consts::PI) / n)) + tn
 }
 
-fn cooling_schedule_6 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_6(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
     ((t0 - tn) / 2.0) * (1.0 - f64::tanh(10.0 * i / n - 5.0)) + tn
 }
 
-fn cooling_schedule_7 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_7(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    (t0-tn)/f64::cosh(10.0*i/n)+tn
+    (t0 - tn) / f64::cosh(10.0 * i / n) + tn
 }
 
-fn cooling_schedule_8 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_8(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    let a = (1.0/n)*f64::ln(t0/tn);
-    t0*f64::powf(std::f64::consts::E, -a*i*i)
+    let a = (1.0 / n) * f64::ln(t0 / tn);
+    t0 * f64::powf(std::f64::consts::E, -a * i * i)
 }
 
-fn cooling_schedule_9 (t0: f64, i: usize, tn: f64, n: usize) -> f64 {
+fn cooling_schedule_9(t0: f64, i: usize, tn: f64, n: usize) -> f64 {
     let i = i as f64;
     let n = n as f64;
-    let a = (1.0/(n*n))*f64::ln(t0/tn);
-    t0*f64::powf(std::f64::consts::E, -a*i*i)
+    let a = (1.0 / (n * n)) * f64::ln(t0 / tn);
+    t0 * f64::powf(std::f64::consts::E, -a * i * i)
 }
 
 fn sa(
@@ -126,8 +127,8 @@ fn sa(
     let mut t = t0;
     let mut iter = 0;
     // let mut log_temperature_file = fs::File::create("outputs/log_temperature").unwrap();
-    // let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
-    // let mut _log_arrays_file = fs::File::create("outputs/log_array").unwrap(); 
+    let mut log_solution_file = fs::File::create("outputs/log_solution").unwrap();
+    // let mut _log_arrays_file = fs::File::create("outputs/log_array").unwrap();
     while iter < max_iter {
         // writeln!(log_temperature_file, "{} {}", iter, t).unwrap();
         while iter_t < samax {
@@ -170,7 +171,7 @@ fn sa(
                 }
             }
         }
-        // writeln!(log_solution_file, "{} {}", iter, get_cost(&s, matrix, sz)).unwrap();
+        writeln!(log_solution_file, "{} {}", iter, get_cost(&s, matrix, sz)).unwrap();
         if t > min_t {
             t = f(t0, iter, min_t, max_iter);
         }
@@ -181,91 +182,159 @@ fn sa(
 }
 
 fn main() {
-    let sz = 100;
-    let points = read_points(sz);
-    let matrix = get_matrix(&points, sz);
-    let mut solution = Vec::<usize>::new();
-    for i in 0..sz {
-        solution.push(i);
-    }
-    let mut rng = thread_rng();
-    solution.shuffle(&mut rng);
-    let cost = get_cost(&solution, &matrix, sz);
-    println!("Initial Solution: {}", cost);
-
-    let functions = [cooling_schedule_0, cooling_schedule_1, cooling_schedule_2, cooling_schedule_3, cooling_schedule_4, cooling_schedule_5, cooling_schedule_6, cooling_schedule_7, cooling_schedule_8, cooling_schedule_9];
-    // let functions = [cooling_schedule_3, cooling_schedule_5, cooling_schedule_7];
-
-    let mut cont = 0;
-    for function in functions {
-        println!("Results for cooling schedule {}", cont);
-        let mut samax = 5;
-        while samax <= 30 {
-            println!("\tmetropolis: {}", samax);
-            let mut max_iter = 100000;
-            while max_iter <= 500000 {
-                println!("\t\tmax_iter: {}", max_iter);
-                let mut temp = 100.0;
-                while temp < 5005.0 {
-                    println!("\t\t\tinitial temperature: {}", temp);
-                    let mut new_solution = solution.clone();
-                    new_solution = sa(samax, max_iter, temp, 0.0, &mut new_solution, &matrix, sz, function);
-                    println!("\t\t\t\tcost: {}", get_cost(&new_solution, &matrix, sz));
-                    temp += 100.0;
-                }
-                max_iter += 100000;
-            }
-            samax += 5;
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        let sz = *(&args[1].parse::<usize>().unwrap());
+        let samax = *(&args[2].parse::<usize>().unwrap());
+        let max_iter = *(&args[3].parse::<usize>().unwrap());
+        let t0 = *(&args[4].parse::<f64>().unwrap());
+        let f_index = *(&args[5].parse::<usize>().unwrap());
+        let points = read_points(sz);
+        let matrix = get_matrix(&points, sz);
+        let mut solution = Vec::<usize>::new();
+        for i in 0..sz {
+            solution.push(i);
         }
-        cont += 1;
+        let mut rng = thread_rng();
+        solution.shuffle(&mut rng);
+
+        let functions = [
+            cooling_schedule_0,
+            cooling_schedule_1,
+            cooling_schedule_2,
+            cooling_schedule_3,
+            cooling_schedule_4,
+            cooling_schedule_5,
+            cooling_schedule_6,
+            cooling_schedule_7,
+            cooling_schedule_8,
+            cooling_schedule_9,
+        ];
+
+        let mut partial_solution = solution.clone();
+        partial_solution = sa(
+            samax,
+            max_iter,
+            t0,
+            0.0,
+            &mut partial_solution,
+            &matrix,
+            sz,
+            functions[f_index],
+        );
+        let partial_cost = get_cost(&partial_solution, &matrix, sz);
+        println!("{}", partial_cost);
+    } else {
+        let sz = 100;
+        let points = read_points(sz);
+        let matrix = get_matrix(&points, sz);
+        let mut solution = Vec::<usize>::new();
+        for i in 0..sz {
+            solution.push(i);
+        }
+        let mut rng = thread_rng();
+        solution.shuffle(&mut rng);
+
+        let functions = [
+            cooling_schedule_0,
+            cooling_schedule_1,
+            cooling_schedule_2,
+            cooling_schedule_3,
+            cooling_schedule_4,
+            cooling_schedule_5,
+            cooling_schedule_6,
+            cooling_schedule_7,
+            cooling_schedule_8,
+            cooling_schedule_9,
+        ];
+
+        let mut partial_solution = solution.clone();
+        partial_solution = sa(
+            25,
+            95000,
+            100.0,
+            0.0,
+            &mut partial_solution,
+            &matrix,
+            sz,
+            functions[3],
+        );
+        let partial_cost = get_cost(&partial_solution, &matrix, sz);
+        println!("Solution: {}", partial_cost);
+
+        // let functions = [cooling_schedule_3, cooling_schedule_5, cooling_schedule_7];
+
+        // let mut cont = 0;
+        // for function in functions {
+        //     println!("Results for cooling schedule {}", cont);
+        //     let mut samax = 5;
+        //     while samax <= 30 {
+        //         println!("\tmetropolis: {}", samax);
+        //         let mut max_iter = 100000;
+        //         while max_iter <= 500000 {
+        //             println!("\t\tmax_iter: {}", max_iter);
+        //             let mut temp = 100.0;
+        //             while temp < 5005.0 {
+        //                 println!("\t\t\tinitial temperature: {}", temp);
+        //                 let mut new_solution = solution.clone();
+        //                 new_solution = sa(samax, max_iter, temp, 0.0, &mut new_solution, &matrix, sz, function);
+        //                 println!("\t\t\t\tcost: {}", get_cost(&new_solution, &matrix, sz));
+        //                 temp += 100.0;
+        //             }
+        //             max_iter += 100000;
+        //         }
+        //         samax += 5;
+        //     }
+        //     cont += 1;
+        // }
+
+        // let mut partial_solution_0 = solution.clone();
+        // partial_solution_0 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_0, &matrix, sz, cooling_schedule_0);
+        // let partial_cost_0 = get_cost(&partial_solution_0, &matrix, sz);
+        // println!("Solution for cooling schedule 0: {}", partial_cost_0);
+        // let mut partial_solution_1 = solution.clone();
+        // partial_solution_1 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_1, &matrix, sz, cooling_schedule_1);
+        // let partial_cost_1 = get_cost(&partial_solution_1, &matrix, sz);
+        // println!("Solution for cooling schedule 1: {}", partial_cost_1);
+        // let mut partial_solution_2 = solution.clone();
+        // partial_solution_2 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_2, &matrix, sz, cooling_schedule_2);
+        // let partial_cost_2 = get_cost(&partial_solution_2, &matrix, sz);
+        // println!("Solution for cooling schedule 2: {}", partial_cost_2);
+        // let mut partial_solution_3 = solution.clone();
+        // partial_solution_3 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_3, &matrix, sz, cooling_schedule_3);
+        // let partial_cost_3 = get_cost(&partial_solution_3, &matrix, sz);
+        // println!("Solution for cooling schedule 3: {}", partial_cost_3);
+        // let mut partial_solution_4 = solution.clone();
+        // partial_solution_4 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_4, &matrix, sz, cooling_schedule_4);
+        // let partial_cost_4 = get_cost(&partial_solution_4, &matrix, sz);
+        // println!("Solution for cooling schedule 4: {}", partial_cost_4);
+        // let mut partial_solution_5 = solution.clone();
+        // partial_solution_5 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_5, &matrix, sz, cooling_schedule_5);
+        // let partial_cost_5 = get_cost(&partial_solution_5, &matrix, sz);
+        // println!("Solution for cooling schedule 5: {}", partial_cost_5);
+        // let mut partial_solution_6 = solution.clone();
+        // partial_solution_6 = sa(5, 40000, 100.0, 0.0, &mut partial_solution_6, &matrix, sz, cooling_schedule_6);
+        // let partial_cost_6 = get_cost(&partial_solution_6, &matrix, sz);
+        // println!("Solution for cooling schedule 6: {}", partial_cost_6);
+
+        // Para instância de 51 cidades
+        //
+        // let mut partial_solution_7 = solution.clone();
+        // partial_solution_7 = sa(30, 100000, 3400.0, 0.0, &mut partial_solution_7, &matrix, sz, functions[7]);
+        // let partial_cost_7 = get_cost(&partial_solution_7, &matrix, sz);
+        // println!("Some solution: {}", partial_cost_7);
+
+        // Para instância de 100 cidades
+        //
+        // let mut partial_solution_7 = solution.clone();
+        // partial_solution_7 = sa(30, 500000, 500.0, 0.0, &mut partial_solution_7, &matrix, sz, functions[3]);
+        // let partial_cost_7 = get_cost(&partial_solution_7, &matrix, sz);
+        // println!("Some solution: {}", partial_cost_7);
+
+        // solution = sa(5, 10000, 100.0, 0.0001, &mut solution, &matrix, sz, cooling_schedule_3);
+        // solution = sa(5, 10000, 300.0, 0.0001, &mut solution, &matrix, sz, cooling_schedule_6);
+        // let new_cost = get_cost(&solution, &matrix, sz);
+        // println!("First SA Solution: {}", new_cost);
+        // println!("Optmization: {}", new_cost/cost);
     }
-
-    // let mut partial_solution_0 = solution.clone();
-    // partial_solution_0 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_0, &matrix, sz, cooling_schedule_0);
-    // let partial_cost_0 = get_cost(&partial_solution_0, &matrix, sz);
-    // println!("Solution for cooling schedule 0: {}", partial_cost_0);
-    // let mut partial_solution_1 = solution.clone();
-    // partial_solution_1 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_1, &matrix, sz, cooling_schedule_1);
-    // let partial_cost_1 = get_cost(&partial_solution_1, &matrix, sz);
-    // println!("Solution for cooling schedule 1: {}", partial_cost_1);
-    // let mut partial_solution_2 = solution.clone();
-    // partial_solution_2 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_2, &matrix, sz, cooling_schedule_2);
-    // let partial_cost_2 = get_cost(&partial_solution_2, &matrix, sz);
-    // println!("Solution for cooling schedule 2: {}", partial_cost_2);
-    // let mut partial_solution_3 = solution.clone();
-    // partial_solution_3 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_3, &matrix, sz, cooling_schedule_3);
-    // let partial_cost_3 = get_cost(&partial_solution_3, &matrix, sz);
-    // println!("Solution for cooling schedule 3: {}", partial_cost_3);
-    // let mut partial_solution_4 = solution.clone();
-    // partial_solution_4 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_4, &matrix, sz, cooling_schedule_4);
-    // let partial_cost_4 = get_cost(&partial_solution_4, &matrix, sz);
-    // println!("Solution for cooling schedule 4: {}", partial_cost_4);
-    // let mut partial_solution_5 = solution.clone();
-    // partial_solution_5 = sa(5, 50000, 100.0, 0.0001, &mut partial_solution_5, &matrix, sz, cooling_schedule_5);
-    // let partial_cost_5 = get_cost(&partial_solution_5, &matrix, sz);
-    // println!("Solution for cooling schedule 5: {}", partial_cost_5);
-    // let mut partial_solution_6 = solution.clone();
-    // partial_solution_6 = sa(5, 40000, 100.0, 0.0, &mut partial_solution_6, &matrix, sz, cooling_schedule_6);
-    // let partial_cost_6 = get_cost(&partial_solution_6, &matrix, sz);
-    // println!("Solution for cooling schedule 6: {}", partial_cost_6);
-
-    // Para instância de 51 cidades
-    //
-    // let mut partial_solution_7 = solution.clone();
-    // partial_solution_7 = sa(30, 100000, 3400.0, 0.0, &mut partial_solution_7, &matrix, sz, functions[7]);
-    // let partial_cost_7 = get_cost(&partial_solution_7, &matrix, sz);
-    // println!("Some solution: {}", partial_cost_7);
-
-    // Para instância de 100 cidades
-    //
-    // let mut partial_solution_7 = solution.clone();
-    // partial_solution_7 = sa(30, 500000, 500.0, 0.0, &mut partial_solution_7, &matrix, sz, functions[3]);
-    // let partial_cost_7 = get_cost(&partial_solution_7, &matrix, sz);
-    // println!("Some solution: {}", partial_cost_7);
-
-    // solution = sa(5, 10000, 100.0, 0.0001, &mut solution, &matrix, sz, cooling_schedule_3);
-    // solution = sa(5, 10000, 300.0, 0.0001, &mut solution, &matrix, sz, cooling_schedule_6);
-    // let new_cost = get_cost(&solution, &matrix, sz);
-    // println!("First SA Solution: {}", new_cost);
-    // println!("Optmization: {}", new_cost/cost);
 }
